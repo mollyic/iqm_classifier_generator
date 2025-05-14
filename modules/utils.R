@@ -99,25 +99,40 @@ class.qual <- names(lst.labels[['quality']])
 class.art <- names(lst.labels[['artifact']])
 
 #----------------------------------------------------
-#FILTER INPUT DATAFRAME
-col.fact <- paste0('factor_', sub('avg_','', in.measure))
-#   * column names
-df.seq <- df.iqms[df.iqms$modality == in.seq & !is.na(df.iqms[[in.measure]]), ]
-df.input <- df.seq
-if(in.measure !='avg_quality'){
-  df.input <- df.input[df.input[[in.measure]] <=4, ]
-}
-df.input <- df.input %>%
-  mutate(
-    across(
-      .cols = c(factor_flow_ghosting, factor_susceptibility, factor_motion),
-      .fns = ~ factor(.x, levels = class.art[class.art %in% unique(.x)])
+# Functions 
+func.format_df <- function(df, sequence, rating, factor_col, weights){
+  "
+  Function to configure dataframe for processing 
+  "
+
+  #df.input <- df.iqms[df.iqms$modality == in.seq & !is.na(df.iqms[[in.measure]]), ]
+  
+  if(rating !='avg_quality'){df_format <- df[df[[rating]] <=4, ]}
+  df_format <- df %>%
+    filter(modality == sequence, 
+           !is.na(!!sym(rating))) %>%
+    dplyr::mutate(
+      across(
+        .cols = c(factor_flow_ghosting, factor_susceptibility, factor_motion),
+        .fns = ~ factor(.x, levels = class.art[class.art %in% unique(.x)])
+      )
     )
-  )
-  df.input$factor_quality <- factor(
-  df.input$factor_quality, 
-  levels = unique(df.input$factor_quality)[order(match(unique(df.input$factor_quality), class.qual))])
-#----------------------------------------------------
+
+  df_format$factor_quality <- factor(
+    df_format$factor_quality, 
+    levels = unique(df_format$factor_quality)[order(match(unique(df_format$factor_quality), class.qual))])
+  
+  if(weights != 'unweighted'){
+    #   * Create weighting col for stratified sampling
+    df_weights <- func.weight_df(df.iqms, factor_col)
+  
+    lst_weights <- setNames(c(df_weights[[weights]]), df_weights[[col.fact]])
+    df_format[[weights]] <- lst_weights[df_format[[factor_col]]]
+    df_format <-df_format %>%
+      dplyr::mutate(!!sym(weights) := importance_weights(!!sym(weights)))
+  }
+  return(df_format)
+}
 func.weight_df <- function(df, factor_col){
   "
   Function to append class frequency weightings to dataframe for processing 
