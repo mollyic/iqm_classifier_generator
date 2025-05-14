@@ -86,10 +86,7 @@ func_comparemodels <- function(model) {
       select(-any_of(c('.estimator', 'n'))) %>%
       pivot_wider(values_from = c('mean', 'std_err'), 
                   names_from = c('.metric'), 
-                  names_glue= c('cv_{.metric}.{.value}'))# %>% 
-    #rename(mean := sym(paste0('cv_', in.metric,'_mean'))) %>%
-    # mutate(.metric = in.metric, .before = mean)
-      
+                  names_glue= c('cv_{.metric}.{.value}'))
     return(best_metrics)
   }
   # DF of best classifiers per fold with all performance metrics
