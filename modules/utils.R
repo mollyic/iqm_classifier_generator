@@ -131,7 +131,6 @@ func.format_df <- function(df, sequence, rating, factor_col, weights){
     df_format <-df_format %>%
       dplyr::mutate(!!sym(weights) := importance_weights(!!sym(weights)))
   }
-  
   return(df_format)
 }
 func.weight_df <- function(df, factor_col){

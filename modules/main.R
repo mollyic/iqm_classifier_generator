@@ -27,7 +27,7 @@ tmp.run_details <- data.frame(seq = in.seq,
 
 #--------------------------------------------------------------------------------
 #Data frame formatting
-ind_vars <- c('bids_name', in.metrics) ?
+ind_vars <- c('bids_name', in.metrics) 
 #   * independent variables
 col.fact <- paste0('factor_', sub('avg_','', in.measure))
 #   * factor name

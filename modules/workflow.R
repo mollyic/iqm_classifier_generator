@@ -1,17 +1,13 @@
-
 if (in.mode == 'regression'){
-  in.ivs = c(in.metrics, col.fact)
+  in.ivs = c(ind_vars, col.fact)
   in.dv = in.measure
-  #in.metric = 'rmse'
   in.models  = names(models_lst)
   in.metric_set = metric_set(rmse, rsq, ccc)
 } else {
-  in.ivs = in.metrics
+  in.ivs = ind_vars
   in.dv = col.fact
-  # in.metric = 'roc_auc'
-  in.models  = c('rf')
-  in.metric_set = metric_set(roc_auc, pr_auc,
-                             f_meas, bal_accuracy, brier_class)
+  in.models  = c('rf', 'xgb')
+  in.metric_set = metric_set(roc_auc, pr_auc,f_meas, bal_accuracy, brier_class)
 }
 
 # Define formula
@@ -29,7 +25,7 @@ recipe_preproc <- recipe_preproc %>%
   step_pca(all_predictors(), num_comp = in.pcas) %>%
   step_rm(all_predictors(), -starts_with("PC"))
 
-# Find best cost
+
 get_winner <- function(dat, engine, col_name = in.metric) {
   metric_info <- choose_metric(engine, in.metric, call = call)
   direction <- metric_info$direction
@@ -59,6 +55,7 @@ func_comparemodels <- function(model) {
     
     if (in.weights != 'unweighted'){
       wf.model <-wf.model %>% add_case_weights(!!sym(in.weights))}
+      
     # * Within each bootstrap, each model (HP configuration) is run 
     tune_results <- 
       wf.model %>% 
@@ -86,7 +83,7 @@ func_comparemodels <- function(model) {
       select(-any_of(c('.estimator', 'n'))) %>%
       pivot_wider(values_from = c('mean', 'std_err'), 
                   names_from = c('.metric'), 
-                  names_glue= c('cv_{.metric}.{.value}'))
+                  names_glue= c('cv_{.metric}.{.value}'))      
     return(best_metrics)
   }
   # DF of best classifiers per fold with all performance metrics
@@ -177,7 +174,8 @@ func_comparemodels <- function(model) {
   print(lastfits_res)
   
   cat('\n Winning metric score for', model,' model: \n\t * ', paste0('lastfit_', in.metric), ': ', 
-      win_params[[paste0('lastfit_', in.metric)]], '\n\n')
+      win_params[[paste0('lastfit_', in.metric)]], '\n\n'), 
+      '\n\t * row count', nrow(win_eng %>% collect_predictions()), ': \n\n')
   print(extract_workflow(win_eng))
   return(list('model' = win_eng, 'params' = win_params))
 }
@@ -225,10 +223,9 @@ print(models_res %>% select(-any_of(c('.config'))))
 win_idx <- get_winner(models_res, 
                       engine = model_results[[in.models[[1]]]]$model,
                       col_name = paste0('lastfit_', in.metric))
+
 models_res$winner <- 0
 models_res[win_idx,]$winner <- 1
-
-
 win_params <- models_res #models_res[win_idx,]
 win_eng <- model_results[[models_res[win_idx,]$model]]$model
 win_preds <- win_eng %>% collect_predictions()
@@ -241,7 +238,6 @@ for (model_name in names(model_results)){
   saveRDS(tmp_eng, paste(lst_dir$models, file.rds_base, sep = '/'))
   cat('\n\nSaving ', toupper(model_name), 'classifier:', '\n\t * ', file.rds_base, '\n\n')
 }
-
 cat('\n\n\n * Best models from each model type:\n')
 print(models_res)
 cat('\n\n\n * Overall winning model:\n')
