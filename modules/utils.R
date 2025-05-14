@@ -126,10 +126,16 @@ df.input$factor_quality <- factor(
 
 #----------------------------------------------------
 #WEIGHTING DATAFRAME
-df.weights <- df.input %>%
-  group_by(!!sym(col.fact)) %>%
-  dplyr::summarise(count = n(), proportion = n() / nrow(df.input)) %>% 
-  mutate(w_inverse = 1 / proportion,
-         w_invsqr =w_inverse^2
-  )
+
+func.weight_df <- function(df, factor_col){
+  # function to determine weights for labels based on class frequency
+  df_weights <- df %>%
+    group_by(!!sym(factor_col)) %>%
+    dplyr::summarise(count = n(), proportion = n() / nrow(df)) %>% 
+    dplyr::mutate(
+      w_inverse = 1 / proportion,
+      w_invsqr = w_inverse^2)
+
+  return(df_weights)
+}
 
