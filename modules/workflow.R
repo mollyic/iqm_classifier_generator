@@ -1,4 +1,3 @@
-
 if (in.mode == 'regression'){
   in.ivs = c(in.metrics, col.fact)
   in.dv = in.measure
@@ -8,7 +7,7 @@ if (in.mode == 'regression'){
   in.ivs = in.metrics
   in.dv = col.fact
   in.metric = 'roc_auc'
-  in.models  = c('rf', 'xgb')
+  in.models  = c('xgb', 'rf')
 }
 
 # Define formula
@@ -53,9 +52,11 @@ func_comparemodels <- function(model) {
     
     tune_results <- 
       wf.model %>% 
-      tune_grid(resamples = object, grid = in_grid,
-        control <- control_grid(save_pred = TRUE, verbose = TRUE)
-        )
+      tune_grid(
+        resamples = object,
+        grid = in_grid,
+        control <- control_grid(save_pred = TRUE, verbose = TRUE)      
+      )
     
     return(tune_results) 
   }
@@ -83,6 +84,11 @@ func_comparemodels <- function(model) {
   lastfits_res <- map(lastfits_run, 'results')
   lastfits_res <- bind_rows(lastfits_res)
   
+  cat('\n\nDF: lastfits_run')
+  print(lastfits_run)
+  cat('\n\nDF: lastfits_res')
+  print(lastfits_res)
+  
   win_params <- get_winner(lastfits_res, col_name = paste0('lastfit_', in.metric))
   
   if (in.mode == 'regression') {
@@ -100,6 +106,7 @@ func_comparemodels <- function(model) {
 }
 
 # progressr: progress during parallel execution
+cat('\n\nRunning models: ', in.models, '\n')
 model_results <- with_progress({
   p <- progressor(steps = length(in.models))
   future_map(in.models, ~{
@@ -134,6 +141,5 @@ file.rds_base <- paste0(toupper(in.mode), '_model-', win_params$model, '_', file
 saveRDS(win_eng, paste(lst_dir$models, file.rds_base, sep = '/'))
 
 cat('\nPREDICTIONS:\n\n')
-print(win_preds[c(unlist(lapply(c(col.fact, in.measure), grep, names(win_preds), value =T)), 
+print(win_preds[c(unlist(lapply(c(col.fact, in.measure), grep, names(win_preds), value =T)),
                   names(win_preds)[1:5])], n = 50)
-
