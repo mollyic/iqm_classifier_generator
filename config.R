@@ -27,6 +27,8 @@ debug <- T
 # * run in debug mode with minimal computations
 run_paral = F
 # * run in parallel with slurm script
+run_future = F
+sink_results <- F
 
 #Nested cross-validation parameters ---------------------------------
 in.split <- 0.8

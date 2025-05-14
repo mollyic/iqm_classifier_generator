@@ -1,29 +1,17 @@
-library(plyr); library(parsnip); library(tidymodels); library(rsample); library(themis);
-library(recipes); library(tidyverse); library(ggplot2); library(xgboost); library(RColorBrewer);
-library(pROC); library(vip);library(progressr);
-library(ranger); library(parallel);library('doParallel');library(furrr); library(tictoc); library('glmnet')
+#library(xgboost);library(pROC); library(vip);library(progressr);library(ranger); library('glmnet')
+library(pacman)
+p_load(plyr, parsnip, tidymodels, rsample, recipes,
+       tidyverse, furrr, progressr, tictoc)
+source('config.R')
 
-#testing?
-debug <- F
-run_paral = T
-run_future = F
-dir_results <- 'results/'
-sink_results <- F
 
-#CV PARAMETERS
-in.split <- 0.8
-grid_size_linear <- 1000
-in.cvfolds <- 10
-in.cvreps <- 1
-in.bootstraps <- 25
-in.grid_size <- 50
 
 if (isTRUE(debug)){
-  in.grid_size <- 5
+  in.grid_size <- 3
   grid_size_linear <- 10
-  in.cvfolds <- 3
+  in.cvfolds <- 2
   in.cvreps <- 1
-  in.bootstraps <-2
+  in.bootstraps <-4
   dir_results <- 'debug/results/'
 }
 
