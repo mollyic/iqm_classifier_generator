@@ -13,7 +13,7 @@ script_str <- paste0(in.seq, '_pccomps-', in.pcas,
                      '_mode-', in.mode, 
                      '_pfmetric-', in.metric)
 
-script_path <- file.path(dir_paths[['script_dir']], paste0(script_str, '.R'))
+script_path <- file.path(lst_dir[['script_dir']], paste0(script_str, '.R'))
 
 base_script <- sprintf("
 in.seq <-  '%s'
@@ -30,9 +30,8 @@ fileout.preds <- paste0('%s', '_results-predictions.csv')
 fileout.model <- paste0('%s', '.rds')
 file.sink <- paste0('work/terminal_output/', '%s', '_output-console.txt')
 
-source('main.R')
+source('modules/main.R')
 ", in.seq, in.pcas, in.weights, in.measure, in.mode, in.metric, paste(in.models, collapse = "', '"),
                        script_str, script_str, script_str, script_str, script_str)
 
 writeLines(base_script, script_path)
-#source(script_path)
