@@ -30,7 +30,7 @@ check.one_run <- all(
 #Cluster settings
 if (isTRUE(run_paral)){
   handlers("progress")
-  cores_m3 <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK", unset = 1)[1])-1
+  cores_m3 <- ifelse(isTRUE(debug), detectCores()-1, as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK", unset = 1)[1])-1)
   cat('\n\t *  Cluster Cores:', cores_m3, sep='')
   plan(multicore, workers = cores_m3) # plan(multicore) for Unix-based systems
   #options(future.globals.maxSize = 5 * 1024^3)

@@ -20,6 +20,9 @@ cols.weights <-c('w_inverse','w_invsqr', 'unweighted')[1]
 # * weighting strategy for input data
 lst.modes <- c('classification', 'regression')[1]
 # * choice of classification or regression model
+in.reg_metric <- ('rmse')
+in.cls_metric <- ('f_meas') #roc_auc, pr_auc, f_meas, bal_accuracy, brier_class
+in.models  = c('xgb', 'rf')#[2]
 
 #--------------------------------------------------------------------------------
 #Run type configurations

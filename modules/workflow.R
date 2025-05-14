@@ -1,3 +1,4 @@
+
 if (in.mode == 'regression'){
   in.ivs = c(ind_vars, col.fact)
   in.dv = in.measure
