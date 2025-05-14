@@ -85,33 +85,28 @@ df.iqms <- df.iqms[!(names(df.iqms) %in% exclude)]
 #-----------------------------------------------
 #Define dataframe parameters
 #   * column names & keys
-id.ratings <- ifelse(in.measure == 'avg_quality', 'quality', 'artifact')
-col.fact <- paste0('factor_', sub('avg_','', in.measure))
-col.rnd <- paste0('rnd_', sub('avg_','', in.measure))
-#   * column names
-df.seq <- df.iqms[df.iqms$modality == in.seq & !is.na(df.iqms[[in.measure]]), ]
-
-#----------------------------------------------------
-#DF VARIABLES
+#id.ratings <- ifelse(in.measure == 'avg_quality', 'quality', 'artifact')
 cols.ratings<- c(names(df.iqms)[grep('avg_', names(df.iqms))], 
                  names(df.iqms)[grep('factor_', names(df.iqms))])
 #in.metrics <- names(df.iqms)[!(names(df.iqms) %in% c(cols.ids, cols.ratings, exclude))]
 
 #----------------------------------------------------
-#FILTER INPUT DATAFRAME
-df.input <- df.seq
-if(in.measure !='avg_quality'){
-  df.input <- df.input[df.input[[in.measure]] <=4, ]
-}
-
-#----------------------------------------------------
-#FACTORING
+# Factor rating labels
 lst.labels <- list()
 lst.labels[['artifact']] <- c('bad' =1, 'mild'=2, 'ok'=3, 'good'=4, 'outside'=5)
 lst.labels[['quality']] <- c('bad' =1, 'mild'=2, 'ok'=3, 'good'=4, 'great' =5)
 class.qual <- names(lst.labels[['quality']])
 class.art <- names(lst.labels[['artifact']])
 
+#----------------------------------------------------
+#FILTER INPUT DATAFRAME
+col.fact <- paste0('factor_', sub('avg_','', in.measure))
+#   * column names
+df.seq <- df.iqms[df.iqms$modality == in.seq & !is.na(df.iqms[[in.measure]]), ]
+df.input <- df.seq
+if(in.measure !='avg_quality'){
+  df.input <- df.input[df.input[[in.measure]] <=4, ]
+}
 df.input <- df.input %>%
   mutate(
     across(
@@ -119,15 +114,14 @@ df.input <- df.input %>%
       .fns = ~ factor(.x, levels = class.art[class.art %in% unique(.x)])
     )
   )
-
-df.input$factor_quality <- factor(
+  df.input$factor_quality <- factor(
   df.input$factor_quality, 
   levels = unique(df.input$factor_quality)[order(match(unique(df.input$factor_quality), class.qual))])
-
 #----------------------------------------------------
-#WEIGHTING DATAFRAME
-
 func.weight_df <- function(df, factor_col){
+  "
+  Function to append class frequency weightings to dataframe for processing 
+  "
   # function to determine weights for labels based on class frequency
   df_weights <- df %>%
     group_by(!!sym(factor_col)) %>%
@@ -135,7 +129,6 @@ func.weight_df <- function(df, factor_col){
     dplyr::mutate(
       w_inverse = 1 / proportion,
       w_invsqr = w_inverse^2)
-
+  
   return(df_weights)
 }
-
