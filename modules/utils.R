@@ -3,7 +3,7 @@ library(pacman)
 p_load(plyr, parsnip, tidymodels, rsample, recipes,
        tidyverse, furrr, progressr, tictoc)
 source('config.R')
-
+source('modules/models.R')
 
 
 if (isTRUE(debug)){
@@ -15,34 +15,71 @@ if (isTRUE(debug)){
   dir_results <- 'debug/results/'
 }
 
-#----------------------------------------------------
-#M3 PARAMETERS
 
+#----------------------------------------------------
+# Check if settings are configured for one classifier
+check.one_run <- all(
+  length(lst.seqs) == 1,
+  length(lst.measures) == 1,
+  length(lst.pcas) == 1,
+  length(cols.weights) == 1,
+  length(lst.modes) == 1
+)
+
+#----------------------------------------------------
+#Cluster settings
 if (isTRUE(run_paral)){
-  #handlers("progress")
+  handlers("progress")
   cores_m3 <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK", unset = 1)[1])-1
   cat('\n\t *  Cluster Cores:', cores_m3, sep='')
   plan(multicore, workers = cores_m3) # plan(multicore) for Unix-based systems
-  options(future.globals.maxSize = 5 * 1024^3)
+  #options(future.globals.maxSize = 5 * 1024^3)
   }
 
 #----------------------------------------------------
 #SINK FILE
+#sink(file.sink, split=TRUE)
 #----------------------------------------------------
 #DF DETAILS
-cols.ids <- c("aep_id", "modality", "avg_motion", "avg_quality", "avg_flow_ghosting", "avg_susceptibility", "bids_name")
 lst.mode_keys <- c('cls' ='classification', 'reg'='regression')
+dot_brk <- '\n_______________________________________________________\n'
+#----------------------------------------------------
+#MRIQC iqm details 
+cols.mriqc <- c('cjv', 'cnr', 'efc', 'fber', 'fwhm_avg', 'fwhm_x', 'fwhm_y', 
+               'fwhm_z', 'icvs_csf', 'icvs_gm', 'icvs_wm', 'inu_med', 'inu_range', 
+               'qi_1', 'qi_2', 'rpve_csf', 'rpve_gm', 'rpve_wm', 'size_x', 
+               'size_y', 'size_z', 'snr_csf', 'snr_gm', 'snr_total', 'snr_wm', 
+               'snrd_csf', 'snrd_gm', 'snrd_total', 'snrd_wm', 'spacing_x', 
+               'spacing_y', 'spacing_z', 'summary_bg_k', 'summary_bg_mad', 
+               'summary_bg_mean', 'summary_bg_median', 'summary_bg_n', 'summary_bg_p05', 
+               'summary_bg_p95', 'summary_bg_stdv', 'summary_csf_k', 'summary_csf_mad', 
+               'summary_csf_mean', 'summary_csf_median', 'summary_csf_n', 'summary_csf_p05', 
+               'summary_csf_p95', 'summary_csf_stdv', 'summary_gm_k', 'summary_gm_mad', 
+               'summary_gm_mean', 'summary_gm_median', 'summary_gm_n', 'summary_gm_p05', 
+               'summary_gm_p95', 'summary_gm_stdv', 'summary_wm_k', 'summary_wm_mad', 
+               'summary_wm_mean', 'summary_wm_median', 'summary_wm_n', 'summary_wm_p05', 
+               'summary_wm_p95', 'summary_wm_stdv', 'tpm_overlap_csf', 'tpm_overlap_gm', 
+               'tpm_overlap_wm', 'wm2max')
+#   * all MRIQC metrics
+exclude <- c("X", "size_x", "size_y", "size_z", "spacing_x", "spacing_y", "spacing_z", "summary_bg_p05")
+in.metrics <- cols.mriqc[!(cols.mriqc %in% exclude)]
+#   * filtered MRIQC metrics
 
 #----------------------------------------------------
-#IN DATA
-lst_dir <- list(models =paste0(dir_results, '/models'),
+#Output folders and files
+lst_dir <- list(script_dir ='work/run_files', 
+                console_dir = 'work/terminal_output',
+                models =paste0(dir_results, '/models'),
                 results =paste0(dir_results, '/top'), 
                 preds = paste0(dir_results, '/predictions'))
 
+for (dir_path in lst_dir) {
+  if (!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+}
 
-dir.input <- 'input/'
-df.iqms <- read.csv(paste0(dir.input, 'radiolqa_classifier_ratings-all_desc-cleanMBConly.csv'))
-exclude <- c("X", "size_x", "size_y", "size_z", "spacing_x", "spacing_y", "spacing_z", "summary_bg_p05")
+df.iqms <- read.csv(csv.iqms)
 df.iqms <- df.iqms[!(names(df.iqms) %in% exclude)]
 
 #-----------------------------------------------
@@ -57,9 +94,8 @@ df.seq <- df.iqms[df.iqms$modality == in.seq & !is.na(df.iqms[[in.measure]]), ]
 #----------------------------------------------------
 #DF VARIABLES
 cols.ratings<- c(names(df.iqms)[grep('avg_', names(df.iqms))], 
-                 names(df.iqms)[grep('rnd_', names(df.iqms))],
                  names(df.iqms)[grep('factor_', names(df.iqms))])
-in.metrics <- names(df.iqms)[!(names(df.iqms) %in% c(cols.ids, cols.ratings, exclude))]
+#in.metrics <- names(df.iqms)[!(names(df.iqms) %in% c(cols.ids, cols.ratings, exclude))]
 
 #----------------------------------------------------
 #FILTER INPUT DATAFRAME
