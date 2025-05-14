@@ -1,12 +1,14 @@
 
 if (in.mode == 'regression'){
-  in.ivs = c(ind_vars, col.fact)
+  in.ivs = c(in.metrics, col.fact)
   in.dv = in.measure
+  #in.metric = 'rmse'
   in.models  = names(models_lst)
   in.metric_set = metric_set(rmse, rsq, ccc)
 } else {
-  in.ivs = ind_vars
+  in.ivs = in.metrics
   in.dv = col.fact
+  # in.metric = 'roc_auc'
   in.models  = c('rf')
   in.metric_set = metric_set(roc_auc, pr_auc,
                              f_meas, bal_accuracy, brier_class)
@@ -27,7 +29,7 @@ recipe_preproc <- recipe_preproc %>%
   step_pca(all_predictors(), num_comp = in.pcas) %>%
   step_rm(all_predictors(), -starts_with("PC"))
 
-
+# Find best cost
 get_winner <- function(dat, engine, col_name = in.metric) {
   metric_info <- choose_metric(engine, in.metric, call = call)
   direction <- metric_info$direction
@@ -38,7 +40,6 @@ get_winner <- function(dat, engine, col_name = in.metric) {
   return(idx)
 }
 
-
 func_comparemodels <- function(model) {
   
   cat('\nRunning cross-validation loop:\n\t * Model: ', model, '\n')
@@ -48,7 +49,7 @@ func_comparemodels <- function(model) {
   in_grid <- getmodel$grid
   hyperparams <- names(in_grid)
   
-  # Summarize tuning results for each 
+  # Summarize tuning results
   summarize_tune_results <- function(object) {
     #get error for each HP configuration across a single bootstrap 
     set.seed(345)
