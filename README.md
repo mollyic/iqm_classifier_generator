@@ -1,4 +1,5 @@
 # MRI Scan Quality and Motion Prediction Pipeline
+*Note:* Modularised version, dated after originals from spartan
 
 ## Overview
 
@@ -24,7 +25,7 @@ An R-based pipeline for running machine learning models to predict MRI scan qual
   - `workflows.R`: Defines the workflow for preprocessing, tuning, and fitting models.
   - `models.R`: Contains model definitions (Random Forest, XGBoost, LASSO, etc.).
   - `main.R`: Executes the generated script for a specific configuration.
-  
+
 - **`work/terminal_output/`**: Stores terminal outputs for each run.
 - **`models/`**: Stores the trained models in `.rds` format.
 
